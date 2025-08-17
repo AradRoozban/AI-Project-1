@@ -1,0 +1,56 @@
+import streamlit as st
+import pandas as pd
+import numpy as np
+from sklearn.ensemble import RandomForestClassifier
+
+# عنوان صفحه
+st.title("پیش‌بینی خطر خشکسالی با هوش مصنوعی")
+
+# تابع ساخت داده نمونه و آموزش مدل
+@st.cache_data
+def train_model():
+    np.random.seed(42)
+    df = pd.DataFrame({
+        "دمای هوا": np.random.uniform(20, 45, 1000),
+        "بارش": np.random.uniform(0, 150, 1000),
+        "رطوبت": np.random.uniform(10, 90, 1000),
+        "منابع آب": np.random.uniform(0, 100, 1000),
+        "مساحت زیر کشت": np.random.uniform(1, 500, 1000),
+    })
+    # برچسب خشکسالی: شرایط فرضی
+    df["خشکسالی"] = ((df["دمای هوا"] > 38) & (df["بارش"] < 30) & (df["رطوبت"] < 40)).astype(int)
+    
+    X = df.drop("خشکسالی", axis=1)
+    y = df["خشکسالی"]
+    
+    model = RandomForestClassifier(n_estimators=100, random_state=42)
+    model.fit(X, y)
+    return model
+
+model = train_model()
+
+# بارگذاری فایل داده
+uploaded_file = st.file_uploader("فایل CSV داده‌های اقلیمی را بارگذاری کنید", type=["csv"])
+
+if uploaded_file:
+    data = pd.read_csv(uploaded_file)
+    
+    # چک کردن ستون‌های لازم
+    required_cols = ["دمای هوا", "بارش", "رطوبت", "منابع آب", "مساحت زیر کشت"]
+    missing_cols = [col for col in required_cols if col not in data.columns]
+    if missing_cols:
+        st.error(f"ستون‌های زیر در داده شما وجود ندارند: {missing_cols}")
+    else:
+        # پیش‌بینی خشکسالی
+        preds = model.predict(data[required_cols])
+        data["خطر خشکسالی"] = ["بله" if p == 1 else "خیر" for p in preds]
+        
+        st.subheader("نتایج پیش‌بینی:")
+        st.dataframe(data)
+        
+        # امکان دانلود نتایج
+        csv = data.to_csv(index=False).encode("utf-8-sig")
+        st.download_button("دانلود نتایج پیش‌بینی", csv, "drought_predictions.csv", "text/csv")
+
+else:
+    st.info("لطفاً یک فایل CSV معتبر شامل ستون‌های دمای هوا، بارش، رطوبت، منابع آب و مساحت زیر کشت بارگذاری کنید.")
