@@ -1,0 +1,8 @@
+region,temperature,precipitation,humidity,water_resource,cultivated_area,drought_risk
+North,35,10,20,200,500,1
+South,25,80,65,700,400,0
+East,40,5,15,100,600,1
+West,28,70,60,650,300,0
+Center,37,20,25,150,450,1
+Northeast,30,50,55,400,350,0
+Southwest,38,8,18,120,550,1
